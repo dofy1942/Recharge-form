@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Recharge Form</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1f1c2c, #928dab);
+    height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .container {
+    background: rgba(255 255 255 / 0.1);
+    padding: 32px 28px;
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    width: 320px;
+    color: white;
+    text-align: center;
+    animation: fadeIn 0.8s ease-in-out;
+  }
+  h2 {
+    margin-bottom: 24px;
+    font-weight: 600;
+    font-size: 1.6rem;
+  }
+  .mobile-wrapper {
+    display: flex;
+    margin-bottom: 24px;
+  }
+  .mobile-prefix {
+    background: rgba(255 255 255 / 0.2);
+    border-radius: 14px 0 0 14px;
+    padding: 14px 12px;
+    font-size: 17px;
+    color: white;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    min-width: 70px;
+    box-sizing: border-box;
+  }
+  .mobile-input {
+    flex: 1;
+    padding: 14px 16px;
+    font-size: 17px;
+    border: none;
+    border-radius: 0 14px 14px 0;
+    background: rgba(255 255 255 / 0.2);
+    color: white;
+    text-align: center;
+    outline: none;
+    transition: background 0.3s ease;
+    box-sizing: border-box;
+  }
+  .mobile-input:focus {
+    background: rgba(255 255 255 / 0.35);
+  }
+  .mobile-input::placeholder {
+    color: rgba(255 255 255 / 0.7);
+  }
+  .amount-btn {
+    width: 100%;
+    padding: 14px 0;
+    margin: 10px 0;
+    font-size: 17px;
+    border: none;
+    border-radius: 14px;
+    background: rgba(255 255 255 / 0.2);
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s ease, transform 0.2s ease;
+    user-select: none;
+  }
+  .amount-btn:hover {
+    background: rgba(255 255 255 / 0.35);
+    transform: scale(1.04);
+  }
+  .amount-btn.selected {
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    box-shadow: 0 6px 20px rgba(0, 114, 255, 0.6);
+    transform: scale(1.05);
+  }
+  .custom-input {
+    width: 100%;
+    padding: 14px 16px;
+    margin-top: 18px;
+    font-size: 17px;
+    border: none;
+    border-radius: 14px;
+    background: rgba(255 255 255 / 0.2);
+    color: white;
+    text-align: center;
+    outline: none;
+    transition: background 0.3s ease;
+    box-sizing: border-box;
+  }
+  .custom-input:focus {
+    background: rgba(255 255 255 / 0.35);
+  }
+  .custom-input::placeholder {
+    color: rgba(255 255 255 / 0.7);
+  }
+  .submit-btn {
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+    color: white;
+    border: none;
+    padding: 16px;
+    width: 100%;
+    font-size: 17px;
+    margin-top: 26px;
+    cursor: pointer;
+    border-radius: 14px;
+    transition: all 0.3s ease;
+  }
+  .submit-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 114, 255, 0.5);
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h2>Recharge</h2>
+
+    <div class="mobile-wrapper">
+      <div class="mobile-prefix">+971</div>
+      <input
+        type="tel"
+        id="mobileNumber"
+        class="mobile-input"
+        placeholder="5XXXXXXXX"
+        maxlength="9"
+        autocomplete="off"
+        required
+        pattern="5\d{8}"
+        title="Enter a valid UAE mobile number starting with 5"
+      />
+    </div>
+
+    <h2>Recharge Amount</h2>
+    <button class="amount-btn" data-amount="5">AED 5</button>
+    <button class="amount-btn" data-amount="10">AED 10</button>
+    <input
+      type="number"
+      id="customAmount"
+      class="custom-input"
+      placeholder="Enter custom amount"
+      min="1"
+      autocomplete="off"
+    />
+
+    <button class="submit-btn">Continue</button>
+  </div>
+
+  <script>
+    const amountButtons = document.querySelectorAll('.amount-btn');
+    const customInput = document.getElementById('customAmount');
+    const mobileInput = document.getElementById('mobileNumber');
+    const submitBtn = document.querySelector('.submit-btn');
+
+    let selectedAmount = null;
+
+    amountButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        amountButtons.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        customInput.value = '';
+        selectedAmount = parseFloat(btn.getAttribute('data-amount'));
+      });
+    });
+
+    customInput.addEventListener('input', () => {
+      amountButtons.forEach(b => b.classList.remove('selected'));
+      const val = parseFloat(customInput.value);
+      selectedAmount = val > 0 ? val : null;
+    });
+
+    submitBtn.addEventListener('click', () => {
+      if (!selectedAmount || selectedAmount <= 0) {
+        alert('Please select or enter a valid amount.');
+        return;
+      }
+      // Mobile number validation
+      const mobileVal = mobileInput.value.trim();
+      const mobilePattern = /^5\d{8}$/;
+      if (!mobilePattern.test(mobileVal)) {
+        alert('Please enter a valid UAE mobile number starting with 5 (without +971).');
+        mobileInput.focus();
+        return;
+      }
+      
+      // All good, redirect to payment page with amount and full mobile number as URL params
+      const urlAmount = encodeURIComponent(selectedAmount);
+      const urlMobile = encodeURIComponent('+971' + mobileVal);
+      window.location.href = `payment.html?amount=${urlAmount}&mobile=${urlMobile}`;
+    });
+  </script>
+</body>
+</html>
